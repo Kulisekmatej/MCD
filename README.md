@@ -62,8 +62,6 @@ mcdonalds/
 │  └─ gui.py                #   grafické okno (tkinter)
 ├─ tools/make_sample_pdfs.py# generátor ukázkových PDF
 ├─ sample_pdfs/             # ukázkové rozpisy (fiktivní jména)
-├─ vercel.json              # nastavení nasazení statické stránky na Vercel
-├─ .vercelignore            # co se na Vercel nenahrává
 └─ tests/                   # automatické testy (python -m unittest)
 ```
 
