@@ -1,11 +1,9 @@
-# Počítadlo odpracovaných hodin (McDonald's)
+# Počítadlo odpracovaných hodin 
 
 > ⚠️ **BETA verze** – aplikace je funkční, ale stále se vyvíjí. Výsledky si
 > radši ověř a případné nesrovnalosti dej vědět. Vzhled aplikace je v beta testingu.
 
-Windows aplikace, která z PDF rozpisů směn spočítá, **kolik hodin odpracoval
-každý zaměstnanec**. Nahraješ rozpisy, klikneš na tlačítko spočítat hodiny a dostaneš tabulku se součtem hodin za každého člověka.
-Výsledek jde vyexportovat do Excelu nebo CSV.
+
 
 ## Co umí
 
@@ -38,7 +36,7 @@ Výsledek jde vyexportovat do Excelu nebo CSV.
 
 ### B) Stažení Releases
 
-  1. Aplikaci lze stáhnout z Releases a je předem automaticky sestavena, ale může se objevit určitý error : python312.dll, který zatím nevím, jak řádně opravit a proto doporučuji si aplikaci sestavit sám. 
+  1. Zatím nefunkční.
 ---      
 
 
@@ -70,5 +68,5 @@ mcdonalds/
 - Zatím žádné nenalezeny.
 - Počítaní dovolené si nejsem jistý, prosím o kontrolu.
 - Excel není přehledný.
-- Chyby hlaste přes [GitHub Issues](https://github.com/Kulisekmatej/mcdonalds-kal/issues).
+- Chyby hlaste přes [GitHub Issues](https://github.com/Kulisekmatej/MCD/issues).
   
