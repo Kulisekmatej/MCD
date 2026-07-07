@@ -102,6 +102,9 @@ def _clean_name(raw: str) -> str:
     # Pryč s vedoucím číslováním / odrážkami ("1.", "12)", "-", "•").
     name = re.sub(r"^[\s\d.)\-•·*]+", "", name)
     name = re.sub(r"\s+", " ", name).strip(" .,-–—|:;")
+    # U zápisu "Novák Jan od 9:00 do 17:00" končí text před časem slovem "od",
+    # které do jména nepatří (jinak by se tentýž člověk rozpadl na dva řádky).
+    name = re.sub(r"\s+od$", "", name, flags=re.IGNORECASE)
     return name
 
 
@@ -150,8 +153,8 @@ def parse_shifts_from_text(
 ) -> List[Shift]:
     """Najde v textu řádky se jménem a časovým rozsahem a vrátí směny.
 
-    Pokud je na řádku víc časových rozsahů, bere se rozpětí od nejdřívějšího
-    začátku po nejpozdější konec (tj. celé časové okno směny).
+    Pokud je na řádku víc časových rozsahů (dělená směna), sečtou se délky
+    jednotlivých rozsahů – mezera mezi částmi se jako práce nepočítá.
     """
     shifts: List[Shift] = []
     current_date = default_date
@@ -176,21 +179,25 @@ def parse_shifts_from_text(
         if not _looks_like_name(name):
             continue
 
-        starts = [_to_minutes(r.group(1)) for r in ranges]
-        ends = [_to_minutes(r.group(2)) for r in ranges]
-        start_min = min(starts)
-        end_min = max(ends)
-
-        # Přes půlnoc (např. 22:00–6:00): k délce se přičte 24 h.
-        span = end_min - start_min
-        if span <= 0:
-            span += 24 * 60
+        # Každý rozsah zvlášť: přes půlnoc (např. 22:00–6:00) se ke konci
+        # přičte 24 h. Délka směny = součet délek rozsahů (bez mezer).
+        starts: List[int] = []
+        norm_ends: List[int] = []
+        span = 0
+        for r in ranges:
+            r_start = _to_minutes(r.group(1))
+            r_end = _to_minutes(r.group(2))
+            if r_end <= r_start:
+                r_end += 24 * 60
+            starts.append(r_start)
+            norm_ends.append(r_end)
+            span += r_end - r_start
 
         shifts.append(
             Shift(
                 employee=name,
-                start_minutes=start_min,
-                end_minutes=end_min if end_min > start_min else end_min + 24 * 60,
+                start_minutes=min(starts),
+                end_minutes=max(norm_ends),
                 span_minutes=span,
                 day=current_date,
                 source_file=source_file,
@@ -215,9 +222,9 @@ def parse_period_start(text: str) -> Optional[date]:
 
 
 def _hhmm_to_minutes(token: str) -> Optional[int]:
-    """"1600" -> 960. Vrátí None pro neplatný čas."""
+    """"1600" -> 960. Vrátí None pro neplatný čas (24:00 je povolený konec)."""
     h, m = int(token[:2]), int(token[2:])
-    if h > 24 or m > 59:
+    if h > 24 or m > 59 or (h == 24 and m > 0):
         return None
     return h * 60 + m
 

@@ -404,6 +404,10 @@ class App(tk.Tk):
             self._recalculate()
 
     def compute(self) -> None:
+        # Klávesová zkratka (F5) obchází zablokované tlačítko – během běžícího
+        # čtení PDF nesmí odstartovat druhé vlákno.
+        if "disabled" in self.compute_btn.state():
+            return
         if not self.files:
             messagebox.showwarning("Žádné soubory", "Nejdřív přidej alespoň jedno PDF.")
             return
@@ -548,9 +552,12 @@ class App(tk.Tk):
     # --- nezletilí ---------------------------------------------------------
     def edit_minors(self) -> None:
         """Otevře dialog pro označení, kdo je nezletilý."""
-        names = {t.employee for t in self.totals}
-        names.update(self.minors.values())
-        names = sorted(names, key=normalize_key)
+        # Jména sjednoť podle normalizovaného klíče (jinak by se v dialogu
+        # objevil tentýž člověk dvakrát a vkládání do stromu by spadlo);
+        # při shodě má přednost tvar z aktuálních výsledků.
+        by_key = {normalize_key(n): n for n in self.minors.values()}
+        by_key.update({normalize_key(t.employee): t.employee for t in self.totals})
+        names = sorted(by_key.values(), key=normalize_key)
         if not names:
             messagebox.showinfo(
                 "Nejdřív spočítej hodiny",
@@ -562,8 +569,9 @@ class App(tk.Tk):
 
     def _save_minors(self, minor_keys: set) -> None:
         # Z vybraných klíčů sestav slovník {klíč: zobrazené_jméno}.
-        display_by_key = {t.employee: t.employee for t in self.totals}
-        display_by_key.update({normalize_key(n): n for n in self.minors.values()})
+        display_by_key = {normalize_key(n): n for n in self.minors.values()}
+        display_by_key.update(
+            {normalize_key(t.employee): t.employee for t in self.totals})
         new_minors: Dict[str, str] = {}
         for key in minor_keys:
             name = display_by_key.get(key, key)

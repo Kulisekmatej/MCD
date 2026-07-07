@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from .config import BreakConfig
@@ -28,6 +29,20 @@ def night_minutes(start_minutes: int, end_minutes: int) -> int:
     for win_start, win_end in _NIGHT_WINDOWS:
         total += max(0, min(end_minutes, win_end) - max(start_minutes, win_start))
     return total
+
+
+def _split_at_midnight(
+    day: Optional[date], start_minutes: int, end_minutes: int
+) -> List[Tuple[Optional[date], int, int]]:
+    """Rozdělí interval směny na části před půlnocí a po ní (s jejich daty).
+
+    Směna pátek 22:00–6:00 se tak rozpadne na pá 22:00–24:00 a so 0:00–6:00,
+    aby se víkendové hodiny přiřadily správnému dni.
+    """
+    if end_minutes <= 24 * 60:
+        return [(day, start_minutes, end_minutes)]
+    next_day = day + timedelta(days=1) if day is not None else None
+    return [(day, start_minutes, 24 * 60), (next_day, 24 * 60, end_minutes)]
 
 
 def aggregate(
@@ -63,7 +78,9 @@ def aggregate(
     vac_days: Dict[str, float] = {}
     sick_hours_min: Dict[str, int] = {}
     sick_days: Dict[str, float] = {}
-    detected_contract: Dict[str, float] = {}
+    # Úvazek z PDF: {klíč: (datum směny, hodiny)} – při konfliktu mezi rozpisy
+    # vyhrává úvazek z nejnovějšího data (bez data jen jako záloha).
+    detected_contract: Dict[str, Tuple[Optional[date], float]] = {}
     name_variants: Dict[str, Dict[str, int]] = {}
 
     for shift in shifts:
@@ -77,7 +94,11 @@ def aggregate(
         variants = name_variants.setdefault(key, {})
         variants[shift.employee] = variants.get(shift.employee, 0) + 1
         if shift.contract_hours is not None:
-            detected_contract.setdefault(key, shift.contract_hours)
+            prev = detected_contract.get(key)
+            if prev is None or (
+                shift.day is not None and (prev[0] is None or shift.day >= prev[0])
+            ):
+                detected_contract[key] = (shift.day, shift.contract_hours)
 
         if shift.kind in ("vacation", "sick"):
             hours_bucket = vac_hours_min if shift.kind == "vacation" else sick_hours_min
@@ -89,13 +110,25 @@ def aggregate(
         # Nezletilí mají dle zákona přísnější nárok na přestávku (už od 4,5 h).
         worked = break_config.worked_minutes(shift.span_minutes, is_minor=key in minors)
         totals[key] += worked
-        nm = night_minutes(shift.start_minutes, shift.end_minutes)
+        # Přestávka se poměrně rozpočítá i do noční/víkendové části, aby žádná
+        # dílčí kategorie nemohla přesáhnout celkově odpracovaný čas.
+        ratio = worked / shift.span_minutes if shift.span_minutes > 0 else 0.0
+        nm = int(round(night_minutes(shift.start_minutes, shift.end_minutes) * ratio))
         if nm:
             night[key] = night.get(key, 0) + nm
-        if is_weekend(shift.day):
-            weekend[key] = weekend.get(key, 0) + worked
-            if nm:
-                weekend_night[key] = weekend_night.get(key, 0) + nm
+        # Směna přes půlnoc se pro víkend rozdělí: každá část se přiřadí dni,
+        # do kterého skutečně spadá (pá 22:00–so 6:00 → víkend jen sobotních 6 h).
+        for part_day, seg_start, seg_end in _split_at_midnight(
+            shift.day, shift.start_minutes, shift.end_minutes
+        ):
+            if not is_weekend(part_day):
+                continue
+            weekend[key] = weekend.get(key, 0) + int(round((seg_end - seg_start) * ratio))
+            seg_night = night_minutes(seg_start, seg_end)
+            if seg_night:
+                weekend_night[key] = (
+                    weekend_night.get(key, 0) + int(round(seg_night * ratio))
+                )
         shift_counts[key] += 1
         if shift.day is not None:
             days[key].add(shift.day)
@@ -103,7 +136,13 @@ def aggregate(
     result: List[EmployeeTotal] = []
     for key, minutes in totals.items():
         display = max(name_variants[key].items(), key=lambda kv: kv[1])[0]
-        contract = contracts.get(key) or detected_contract.get(key)
+        # Ruční úvazek má přednost; testuje se členstvím (ne přes "or"),
+        # aby fungovala i hodnota 0.
+        if key in contracts:
+            contract = contracts[key]
+        else:
+            detected = detected_contract.get(key)
+            contract = detected[1] if detected is not None else None
         eff = contract if contract is not None else default_contract_hours
         day_min = eff * 60
         vacation_min = vac_hours_min.get(key, 0) + int(round(vac_days.get(key, 0.0) * day_min))
