@@ -1,7 +1,7 @@
 # Počítadlo odpracovaných hodin 
 
-> ⚠️ **BETA verze** – aplikace je funkční, ale stále se vyvíjí. Výsledky si
-> radši ověř a případné nesrovnalosti dej vědět. Vzhled aplikace je v beta testingu.
+> ⚠️ **BETA verze** – aplikace funguje, ale pořád se na ní pracuje. Radši si výsledky překontroluj a když narazíš na nesrovnalosti, dej vědět.
+
 
 
 
@@ -27,16 +27,12 @@
 ## Jak to spustit
 
 
-### A) Sestavení aplikace 
+### A) Zbuildění aplikace (Windows)
+Stáhni si zdrojáky (zelené tlačítko Code -> Download ZIP), rozbal a spusť build_exe.bat. Skript doinstaluje knihovny a přes Nuitku zkompiluje exečku do složky build_nuitka\main.dist\PocitadloHodin.exe.
+(Poznámka: Nuitka si pri prvním spuštění může stáhnout C kompilátor, to jen potvrď.)
 
-1. Stáhni tento projekt přes code a vyber download ZIP a extrahuj .ZIP file a potom otevři **`build_exe.bat`**.
-   Skript doinstaluje knihovny a **zkompiluje aplikaci Nuitkou** do složky
-   `build_nuitka\main.dist\` se souborem `PocitadloHodin.exe`. (Nuitka si
-   může poprvé stáhnout C kompilátor – potvrď stažení.) To znamená, že se aplikace "nainstaluje" :D
-
-### B) Stažení Releases
-
-  1. Zatím nefunkční.
+B) Přes Releases
+Zatím to tu ještě není.
 ---      
 
 
@@ -65,10 +61,7 @@ MCD/
 
 ## Chyby
 
-- Kontrola kódu (07/2026) našla a opravila 9 chyb – detaily v `BUG_REPORT.md`
-  (mj. pád dialogu „Nezletilí…“ a rozdělení nočních směn přes půlnoc mezi
-  víkend a všední den).
-- Výpočet dovolené a nemocenské prošel kontrolou – logika (dny × úvazek,
-  hodiny přímo, ruční úvazek má přednost) je pokrytá testy v `tests/`.
-- Excel není přehledný.
+- 7.7 jsem projel kód a opravil 9 chyb (detaily jsou v BUG_REPORT.md – šlo hlavně o pád dialogu „Nezletilí…“ a špatný počet nočních hodin přes víkend).
+- Logika pro výpočet dovolené a nemocenský je otestovaná a měla by být v pohodě (dny × úvazek, hodiny přímo, ruční úvazek má přednost).
+- Výstup do Excelu zatím není úplně hezky naformátovanej.
 - Chyby hlaste přes [GitHub Issues](https://github.com/Kulisekmatej/MCD/issues).
