@@ -46,7 +46,7 @@
 ## Struktura projektu
 
 ```
-mcdonalds/
+MCD/
 ├─ main.py                  # spouštěč – otevře okno aplikace
 ├─ build_exe.bat            # vytvoření .exe na Windows (Nuitka)
 ├─ requirements.txt         # potřebné knihovny
@@ -65,8 +65,11 @@ mcdonalds/
 
 ## Chyby
 
-- Zatím žádné nenalezeny.
-- Počítaní dovolené si nejsem jistý, prosím o kontrolu.
+- Kontrola kódu (07/2026) našla a opravila 9 chyb – detaily v `BUG_REPORT.md`
+  (mj. pád dialogu „Nezletilí…“ a rozdělení nočních směn přes půlnoc mezi
+  víkend a všední den).
+- Výpočet dovolené a nemocenské prošel kontrolou – logika (dny × úvazek,
+  hodiny přímo, ruční úvazek má přednost) je pokrytá testy v `tests/`.
 - Excel není přehledný.
 - Chyby hlaste přes [GitHub Issues](https://github.com/Kulisekmatej/MCD/issues).
   
