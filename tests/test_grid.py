@@ -57,6 +57,12 @@ class CellShiftTest(unittest.TestCase):
     def test_single_time_is_ignored(self):
         self.assertIsNone(parse_cell_shift("0800"))
 
+    def test_invalid_times_rejected(self):
+        # 24:30 ani 25:00 nejsou platné časy; 24:00 jako konec ano.
+        self.assertIsNone(parse_cell_shift("2430\n0600"))
+        self.assertIsNone(parse_cell_shift("2500\n0600"))
+        self.assertEqual(parse_cell_shift("1600\n2400"), (960, 1440, 480))
+
 
 class LeaveCellTest(unittest.TestCase):
     def test_vacation_day(self):

@@ -129,6 +129,36 @@ class NightTest(unittest.TestCase):
         self.assertEqual(t.night_minutes, 8 * 60)
         self.assertEqual(t.weekend_night_minutes, 0)
 
+    def test_friday_night_weekend_part_after_midnight(self):
+        # Pá 22:00 – so 6:00: do víkendu patří jen sobotních 6 h po půlnoci.
+        fri = date(2026, 6, 5)
+        night = Shift(employee="A", start_minutes=22 * 60, end_minutes=30 * 60,
+                      span_minutes=8 * 60, kind="work", day=fri)
+        t = aggregate([night])[0]
+        self.assertEqual(t.total_minutes, 8 * 60)
+        self.assertEqual(t.weekend_minutes, 6 * 60)
+        self.assertEqual(t.weekend_night_minutes, 6 * 60)
+
+    def test_sunday_night_weekend_part_before_midnight(self):
+        # Ne 22:00 – po 6:00: do víkendu patří jen nedělní 2 h před půlnocí.
+        sun = date(2026, 6, 7)
+        night = Shift(employee="A", start_minutes=22 * 60, end_minutes=30 * 60,
+                      span_minutes=8 * 60, kind="work", day=sun)
+        t = aggregate([night])[0]
+        self.assertEqual(t.weekend_minutes, 2 * 60)
+        self.assertEqual(t.weekend_night_minutes, 2 * 60)
+
+    def test_night_never_exceeds_worked_with_break(self):
+        # Noční 22:00–6:00 s auto přestávkou: noční hodiny nesmí přesáhnout
+        # odpracovaný čas (přestávka se poměrně rozpočítá).
+        cfg = BreakConfig(mode="auto")
+        night = Shift(employee="A", start_minutes=22 * 60, end_minutes=30 * 60,
+                      span_minutes=8 * 60, kind="work")
+        t = aggregate([night], cfg)[0]
+        self.assertEqual(t.total_minutes, 8 * 60 - 30)
+        self.assertEqual(t.night_minutes, 8 * 60 - 30)
+        self.assertLessEqual(t.night_minutes, t.total_minutes)
+
 
 class MinorsTest(unittest.TestCase):
     def test_minor_flag(self):
@@ -193,6 +223,21 @@ class VacationTest(unittest.TestCase):
         t = aggregate([self._sick_day("A", 2, contract=5)])[0]
         self.assertEqual(t.sick_minutes, 2 * 5 * 60)
         self.assertEqual(t.vacation_minutes, 0)
+
+    def test_pdf_contract_prefers_latest_date(self):
+        # Když se úvazek mezi rozpisy změní, platí ten z nejnovějšího data –
+        # bez ohledu na pořadí zpracování souborů.
+        older = Shift(employee="A", start_minutes=8 * 60, end_minutes=16 * 60,
+                      span_minutes=8 * 60, contract_hours=4, day=date(2026, 6, 1))
+        newer = Shift(employee="A", start_minutes=8 * 60, end_minutes=16 * 60,
+                      span_minutes=8 * 60, contract_hours=6, day=date(2026, 6, 8))
+        vac = self._vac_day("A", 1, day=date(2026, 6, 9))
+        t = aggregate([older, newer, vac])[0]
+        self.assertEqual(t.contract_hours, 6)
+        self.assertEqual(t.vacation_minutes, 6 * 60)
+        # Stejný výsledek i při opačném pořadí souborů.
+        t2 = aggregate([newer, older, vac])[0]
+        self.assertEqual(t2.contract_hours, 6)
 
     def test_leave_no_break_applied(self):
         cfg = break_config_for_choice(BREAK_CHOICES[-1])

@@ -63,11 +63,24 @@ class ParseShiftsTest(unittest.TestCase):
         self.assertEqual(parse_shifts_from_text("Jen nějaký text bez časů"), [])
 
     def test_multiple_ranges_span(self):
-        # Dělená směna na jednom řádku: bere se okno od nejdřívějšího po nejpozdější.
+        # Dělená směna na jednom řádku: sečtou se délky částí, mezera se nepočítá.
         shifts = parse_shifts_from_text("Novák Jan 8:00 - 12:00 13:00 - 17:00")
         self.assertEqual(len(shifts), 1)
         self.assertEqual(shifts[0].start_minutes, 8 * 60)
         self.assertEqual(shifts[0].end_minutes, 17 * 60)
+        self.assertEqual(shifts[0].span_minutes, 8 * 60)  # 4 + 4 h, bez mezery
+
+    def test_multiple_ranges_gap_not_counted(self):
+        # 8–12 a 16–20 = 8 h práce, ne 12 h okna.
+        shifts = parse_shifts_from_text("Novák Jan 8:00 - 12:00 16:00 - 20:00")
+        self.assertEqual(shifts[0].span_minutes, 8 * 60)
+
+    def test_od_do_separator_not_in_name(self):
+        # Zápis "od 9:00 do 17:00" nesmí nechat "od" ve jménu.
+        shifts = parse_shifts_from_text("Novák Jan od 9:00 do 17:00")
+        self.assertEqual(len(shifts), 1)
+        self.assertEqual(shifts[0].employee, "Novák Jan")
+        self.assertEqual(shifts[0].span_minutes, 8 * 60)
 
 
 class FilenameDateTest(unittest.TestCase):
