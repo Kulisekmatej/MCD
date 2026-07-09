@@ -15,11 +15,12 @@ import os
 import queue
 import threading
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, ttk
 from typing import Dict, List, Optional
 
 from . import __version__ as VERSION
-from . import store
+from . import store, updater
 from .aggregator import aggregate, date_range, grand_total_minutes
 from .config import BREAK_CHOICES, BreakConfig, break_config_for_choice
 from .models import EmployeeTotal, Shift, format_hm
@@ -141,6 +142,10 @@ class App(tk.Tk):
 
         self._build_ui()
         self._bind_shortcuts()
+
+        # Ask GitHub for the latest release in the background; shows a dialog
+        # only when a newer version exists (silent when offline).
+        updater.start_update_check(self, self._on_update_available)
 
     # --- sestavení rozhraní ------------------------------------------------
     def _build_ui(self) -> None:
@@ -397,6 +402,15 @@ class App(tk.Tk):
     # --- výpočet -----------------------------------------------------------
     def _break_config(self) -> BreakConfig:
         return break_config_for_choice(self.break_var.get())
+
+    def _on_update_available(self, info: updater.UpdateInfo) -> None:
+        # Runs on the Tk main loop once the background check finds a release.
+        if messagebox.askyesno(
+            "Nová verze",
+            f"Je k dispozici nová verze {info.version} "
+            f"(používáš {VERSION}).\n\nOtevřít stránku se stažením?",
+        ):
+            webbrowser.open(info.url)
 
     def _on_break_change(self, _event=None) -> None:
         # Změna přestávky: přepočítej z už načtených směn (bez čtení PDF znovu).
