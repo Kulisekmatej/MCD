@@ -1,11 +1,9 @@
-# Počítadlo odpracovaných hodin (McDonald's)
+# Počítadlo odpracovaných hodin 
 
-> ⚠️ **BETA verze** – aplikace je funkční, ale stále se vyvíjí. Výsledky si
-> radši ověř a případné nesrovnalosti dej vědět. Vzhled aplikace je v beta testingu.
+> ⚠️ **BETA verze** – aplikace funguje, ale pořád se na ní pracuje. Radši si výsledky překontroluj a když narazíš na nesrovnalosti, dej vědět.
 
-Windows aplikace, která z PDF rozpisů směn spočítá, **kolik hodin odpracoval
-každý zaměstnanec**. Nahraješ rozpisy, klikneš na tlačítko spočítat hodiny a dostaneš tabulku se součtem hodin za každého člověka.
-Výsledek jde vyexportovat do Excelu nebo CSV.
+
+
 
 ## Co umí
 
@@ -29,16 +27,12 @@ Výsledek jde vyexportovat do Excelu nebo CSV.
 ## Jak to spustit
 
 
-### A) Sestavení aplikace 
+### A) Zbuildění aplikace (Windows)
+Stáhni si zdrojáky (zelené tlačítko Code -> Download ZIP), rozbal a spusť build_exe.bat. Skript doinstaluje knihovny a přes Nuitku zkompiluje exečku do složky build_nuitka\main.dist\PocitadloHodin.exe.
+(Poznámka: Nuitka si pri prvním spuštění může stáhnout C kompilátor, to jen potvrď.)
 
-1. Stáhni tento projekt přes code a vyber download ZIP a extrahuj .ZIP file a potom otevři **`build_exe.bat`**.
-   Skript doinstaluje knihovny a **zkompiluje aplikaci Nuitkou** do složky
-   `build_nuitka\main.dist\` se souborem `PocitadloHodin.exe`. (Nuitka si
-   může poprvé stáhnout C kompilátor – potvrď stažení.) To znamená, že se aplikace "nainstaluje" :D
-
-### B) Stažení Releases
-
-  1. Aplikaci lze stáhnout z Releases a je předem automaticky sestavena, ale může se objevit určitý error : python312.dll, který zatím nevím, jak řádně opravit a proto doporučuji si aplikaci sestavit sám. 
+B) Přes Releases
+Zatím to tu ještě není.
 ---      
 
 
@@ -48,7 +42,7 @@ Výsledek jde vyexportovat do Excelu nebo CSV.
 ## Struktura projektu
 
 ```
-mcdonalds/
+MCD/
 ├─ main.py                  # spouštěč – otevře okno aplikace
 ├─ build_exe.bat            # vytvoření .exe na Windows (Nuitka)
 ├─ requirements.txt         # potřebné knihovny
@@ -62,15 +56,12 @@ mcdonalds/
 │  └─ gui.py                #   grafické okno (tkinter)
 ├─ tools/make_sample_pdfs.py# generátor ukázkových PDF
 ├─ sample_pdfs/             # ukázkové rozpisy (fiktivní jména)
-├─ vercel.json              # nastavení nasazení statické stránky na Vercel
-├─ .vercelignore            # co se na Vercel nenahrává
 └─ tests/                   # automatické testy (python -m unittest)
 ```
 
 ## Chyby
 
-- Zatím žádné nenalezeny.
-- Počítaní dovolené si nejsem jistý, prosím o kontrolu.
-- Excel není přehledný.
-- Chyby hlaste přes [GitHub Issues](https://github.com/Kulisekmatej/mcdonalds-kal/issues).
-  
+- 7.7 jsem projel kód a opravil 9 chyb (detaily jsou v BUG_REPORT.md – šlo hlavně o pád dialogu „Nezletilí…“ a špatný počet nočních hodin přes víkend).
+- Logika pro výpočet dovolené a nemocenský je otestovaná a měla by být v pohodě (dny × úvazek, hodiny přímo, ruční úvazek má přednost).
+- Výstup do Excelu zatím není úplně hezky naformátovanej.
+- Chyby hlaste přes [GitHub Issues](https://github.com/Kulisekmatej/MCD/issues).
